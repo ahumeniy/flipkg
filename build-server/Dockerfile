@@ -20,6 +20,7 @@ FROM mcr.microsoft.com/azure-functions/dotnet:4
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FLIPPER_FIRMWARE_ROOT=/usr/share/flipperzero-firmware \
+    FLIPPER_BUILD_BRANCH=dev \
     FBT_NO_SYNC=1
 
 RUN apt-get update && apt-get install python3 python3-pip wget git -y && \
