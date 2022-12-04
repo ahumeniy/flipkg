@@ -54,4 +54,4 @@ jobs:
           app-name: 'flipkg-catalog-api'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_34250D008A33492589DA7AAE001AB822 }}
-          package: .
+          package: './catalog-api'
