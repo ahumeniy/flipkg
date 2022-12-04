@@ -21,6 +21,10 @@ jobs:
         with:
           dotnet-version: '6.0.x'
           include-prerelease: true
+          
+      - name: Switch directory
+        run: |
+          cd ./catalog-api
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
@@ -54,4 +58,4 @@ jobs:
           app-name: 'flipkg-catalog-api'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_34250D008A33492589DA7AAE001AB822 }}
-          package: ./catalog-api
+          package: .
