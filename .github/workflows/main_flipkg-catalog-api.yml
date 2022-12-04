@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./catalog-api
 
     steps:
       - uses: actions/checkout@v2
@@ -21,10 +24,6 @@ jobs:
         with:
           dotnet-version: '6.0.x'
           include-prerelease: true
-          
-      - name: Switch directory
-        run: |
-          cd ./catalog-api
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
