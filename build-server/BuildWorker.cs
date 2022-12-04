@@ -16,12 +16,12 @@ namespace build_server
 {
     public class BuildException : Exception
     {
-        public BuildException(string message, int statusCode): base (message)
+        public BuildException(string message, int statusCode) : base(message)
         {
             this.StatusCode = statusCode;
         }
 
-        public BuildException(string message, int statusCode, Exception ex): base(message, ex)
+        public BuildException(string message, int statusCode, Exception ex) : base(message, ex)
         {
             this.StatusCode = statusCode;
         }
@@ -111,7 +111,8 @@ namespace build_server
 
             foreach (var appInfo in manifestData.Where(x => x.AppType == "FlipperAppType.EXTERNAL" || x.AppType == "FlipperAppType.PLUGIN").ToArray())
             {
-                if (appInfo.AppType == "FlipperAppType.PLUGIN") {
+                if (appInfo.AppType == "FlipperAppType.PLUGIN")
+                {
                     log.LogWarning("Detected FlipperAppType.PLUGIN. Might not build...");
                 }
 
@@ -255,11 +256,94 @@ namespace build_server
             catch (Exception ex)
             {
                 log.LogError(ex, "Error opening git: " + ex.Message);
+                throw;
             }
 
             var destinationPath = Path.Combine(firmwareRoot, "applications_user", tempFolderName);
 
             var tempSubdirectory = tempFolderPath;
+
+            // Apply patch
+            if (data.ApplyPatch != null)
+            {
+                var patchFilePath = Path.GetTempFileName();
+
+                using (var patchFile = File.Open(patchFilePath + ".gz", FileMode.Create))
+                {
+                    patchFile.Write(data.ApplyPatch);
+                }
+
+                var zipProcesStartInfo = new ProcessStartInfo
+                {
+                    FileName = "gzip",
+                    Arguments = $"-df {patchFilePath}.gz",
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                };
+
+                // Unzip the patch
+                try
+                {
+                    using (var zipProcess = new Process()
+                    {
+                        StartInfo = zipProcesStartInfo,
+                        EnableRaisingEvents = true
+                    })
+                    {
+                        zipProcess.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+                        {
+                            log.LogInformation(e.Data);
+                        };
+
+                        zipProcess.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+                        {
+                            log.LogError(e.Data);
+                        };
+
+                        zipProcess.Start();
+                        zipProcess.BeginErrorReadLine();
+                        zipProcess.BeginOutputReadLine();
+
+                        await zipProcess.WaitForExitAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "Error extracting patch file: " + ex.Message);
+                    throw;
+                }
+
+                // Apply patch
+                var gitApplyProcessInfo = new ProcessStartInfo
+                {
+                    FileName = "git",
+                    Arguments = $"apply {patchFilePath}",
+                    WorkingDirectory = tempFolderPath,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                };
+
+                try
+                {
+                    using (var gitApplyProcess = new Process()
+                    {
+                        StartInfo = gitApplyProcessInfo
+                    })
+                    {
+                        gitApplyProcess.Start();
+                        await gitApplyProcess.WaitForExitAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "Error extracting patch file: " + ex.Message);
+                    throw;
+                }
+            }
+
+            // Move the specified directory to applications_user folder.
 
             if (!string.IsNullOrEmpty(data.Subdirectory))
             {

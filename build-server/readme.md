@@ -39,3 +39,4 @@ Where:
 - **repo-url**: Is the source repository for the application to build. It can be a repository containing an entire fork of the Flipper Zero firmware, but it can take longer to build.
 - **branch**: The branch in the repository to clone. Can be null or omitted to clone the HEAD.
 - **subdirectory**: Where to look in the source repo for the app source code. For repos originated from a fork of the Flipper Zero firmware. Can be null or omitted if the app is at the root of the repo.
+- **applyPatch**: Optional patch to apply. Must be a gzipped GIT patch file encoded as base64 string.
