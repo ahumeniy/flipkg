@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
@@ -89,7 +90,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpPost(Name = "Post App")]
-    [Authorize]
+    [Authorize()]
     public async Task<ActionResult<Models.App>> Post([Bind(include: Models.App.POSTBINDS)] Models.App app)
     {
         using CosmosClient client = new(
