@@ -18,7 +18,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpGet(Name = "GetApps")]
-    public async Task<Models.ListResponse<Models.App>> Get(string? continuationToken)
+    public async Task<Models.ListResponse<Models.App>> Get([FromHeader(Name="continuation-token")] string? continuationToken)
     {
         List<Models.App> results = new List<Models.App>();
 
@@ -30,7 +30,7 @@ public class AppsController : ControllerBase
 
         var queryable = container.GetItemLinqQueryable<Models.App>(requestOptions: new QueryRequestOptions()
         {
-            MaxItemCount = 1
+            MaxItemCount = 5
         },
         continuationToken: continuationToken);
 

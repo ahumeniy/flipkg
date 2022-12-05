@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "build-server"
+		},
+		{
+			"path": "catalog-api"
+		},
+		{
+			"path": "catalog"
+		}
+	],
+	"settings": {}
+}
