@@ -67,7 +67,7 @@ public class AppsController : ControllerBase
         var container = client.GetContainer("Catalog", "Apps");
 
         Models.App readItem = await container.ReadItemAsync<Models.App>(
-            id: $"{owner}::{name}",
+            id: $"{owner}|{name}",
             partitionKey: new PartitionKey(owner)
         );
 
@@ -89,6 +89,7 @@ public class AppsController : ControllerBase
     }
 
     [HttpPost(Name = "Post App")]
+    [Authorize]
     public async Task<ActionResult<Models.App>> Post([Bind(include: Models.App.POSTBINDS)] Models.App app)
     {
         using CosmosClient client = new(
