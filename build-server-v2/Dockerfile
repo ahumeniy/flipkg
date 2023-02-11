@@ -5,12 +5,15 @@ RUN apt-get update && apt-get install python3 python3-pip wget git -y && \
 
 WORKDIR /App
 
+# Copy the script and make it executable
+COPY . /App
+RUN chmod +x build-fap.sh
+
+# Add AZCopy
 ADD https://aka.ms/downloadazcopy-v10-linux .
 RUN AZCP=`tar ztf downloadazcopy-v10-linux | grep /azcopy` && \
     tar -zxv --strip-components=1 -f downloadazcopy-v10-linux ${AZCP} && \
     mv azcopy /bin
-
-RUN chmod +x build-fap.sh
 
 # Uncomment if creating container for an specific version of the firmware. Builds will be faster, but have to deploy a new container if version changes.
 ENV FZBRANCH=dev
