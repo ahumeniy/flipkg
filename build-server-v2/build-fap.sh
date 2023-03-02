@@ -2,9 +2,10 @@
 
 FZBRANCH=${FZBRANCH:-"dev"}
 TEMPAPPDIR=$(mktemp -d -t fap.XXXXXX)
-WORK_DIR=${PWD##*/}
+WORK_DIR=${PWD}
 PRESERVE=false
 LOCAL=false
+SOURCEDIR="/"
 
 function usage() {
   EXITCODE=${1:-0}
@@ -17,14 +18,17 @@ Options:
   -B firmware_branch    branch (or tag) of the Flipper zero firmware to build for.
                         If there's already a firmware version installed, this argument
                         is ignored.
+  -d source_dir         Directory within the app repo where the App code resides.
+  -r                    clone submodules from app repo
   -p                    preserve artifacts (don't cleanup)
+  -P patch_in_b64_gz    Apply a patch encoded in base64 and gzipped
   -l                    local build (don't upload the results). Involves -p
                         When doing a local build, owner/id and tag_name are ignored.
 EOF
   exit $((EXITCODE))
 }
 
-optstring=":hb:B:pl"
+optstring=":hb:B:d:P:plr"
 
 while getopts ${optstring} arg; do
   case ${arg} in
@@ -37,12 +41,21 @@ while getopts ${optstring} arg; do
     B)
       FZBRANCH="${OPTARG}"
       ;;
+    d)
+      SOURCEDIR="${OPTARG}"
+      ;;
     p)
       PRESERVE=true
+      ;;
+    P)
+      PATCH="${OPTARG}"
       ;;
     l)
       PRESERVE=true
       LOCAL=true
+      ;;
+    r)
+      RECURSIVE="--recursive"
       ;;
     :)
       echo "$0: must supply an argument to -$OPTARG." >&2
@@ -115,14 +128,23 @@ function getAppRepo {
   if [ ! -z $BRANCH ]; then
     branchpart="-b ${BRANCH}"
   fi
-  git clone $SOURCEREPO $branchpart --single-branch $TEMPAPPDIR
+  git clone $SOURCEREPO $branchpart --single-branch $RECURSIVE $TEMPAPPDIR
+
+  if [ ! -z $PATCH ]; then
+    TEMPPATCHFN=$(mktemp -t XXXXXX.patch.gz)
+    base64 -d <<< $PATCH > $TEMPPATCHFN
+    gzip -df $TEMPPATCHFN
+    cd $TEMPAPPDIR
+    git apply ${TEMPPATCHFN%.gz}
+    cd $WORK_DIR
+  fi
 }
 
 # Extract the code folder, if the code is in a subfolder
 function moveAppRepo {
-  # TODO: Move subfolder if the option is enabled
-  mv $TEMPAPPDIR ./flipper/applications_user/
   OLDTEMPAPPDIR=$TEMPAPPDIR
+  TEMPAPPDIR="${TEMPAPPDIR}${SOURCEDIR}"
+  mv $TEMPAPPDIR ./flipper/applications_user/
   TEMPAPPDIR=${TEMPAPPDIR##*/}
   TEMPAPPDIR="${PWD}/flipper/applications_user/${TEMPAPPDIR}"
   echo "Moved app directory to ${TEMPAPPDIR}."

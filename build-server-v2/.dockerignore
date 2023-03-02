@@ -1,1 +1,5 @@
+flipper/
+patches/
+Dockerfile*
 local.settings.json
+fap-list.conf

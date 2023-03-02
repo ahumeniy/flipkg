@@ -1,0 +1,115 @@
+From 1fb56b6b35b787f4fb599a24d1c8d92f7e2e6e72 Mon Sep 17 00:00:00 2001
+From: Alexei Humeniy <yo@ahumeniy.net>
+Date: Thu, 2 Mar 2023 02:12:50 -0300
+Subject: [PATCH] patched dice
+
+---
+ applications/plugins/dice/application.fam  |   5 ++---
+ applications/plugins/dice/dice.c           |  21 +++++----------------
+ applications/plugins/dice/images/black.png | Bin 152 -> 0 bytes
+ 3 files changed, 7 insertions(+), 19 deletions(-)
+ delete mode 100644 applications/plugins/dice/images/black.png
+
+diff --git a/applications/plugins/dice/application.fam b/applications/plugins/dice/application.fam
+index 2fd2d6e10..2333d13b6 100644
+--- a/applications/plugins/dice/application.fam
++++ b/applications/plugins/dice/application.fam
+@@ -1,6 +1,6 @@
+ App(
+     appid="DICE",
+-    name="Dice [RM]",
++    name="Dice",
+     apptype=FlipperAppType.EXTERNAL,
+     entry_point="dice_app",
+     cdefines=["APP_DICE"],
+@@ -8,6 +8,5 @@ App(
+     stack_size=2 * 1024,
+     order=70,
+     fap_icon="dice.png",
+-    fap_category="Games",
+-    fap_icon_assets="images",
++    fap_category="Games"
+ )
+diff --git a/applications/plugins/dice/dice.c b/applications/plugins/dice/dice.c
+index b4559dfb8..65d94c2d2 100644
+--- a/applications/plugins/dice/dice.c
++++ b/applications/plugins/dice/dice.c
+@@ -5,7 +5,6 @@
+ #include <gui/gui.h>
+ #include <input/input.h>
+ #include <dolphin/dolphin.h>
+-#include "DICE_icons.h"
+ #include "applications/settings/desktop_settings/desktop_settings_app.h"
+ 
+ #define TAG "Dice Roller"
+@@ -53,8 +52,6 @@ static void dice_render_callback(Canvas* const canvas, void* ctx) {
+     }
+ 
+     canvas_set_font(canvas, FontSecondary);
+-    canvas_draw_icon(canvas, 0, 0, &I_black);
+-    canvas_set_color(canvas, ColorWhite);
+     if(state->diceSelect < 220) {
+         if(state->diceQty == 1) {
+             elements_button_left(canvas, "x1");
+@@ -319,9 +316,9 @@ static void dice_render_callback(Canvas* const canvas, void* ctx) {
+                 state->diceType[0],
+                 state->rollTime[0]);
+             if(state->diceSelect >= 20 && state->diceRoll == state->diceSelect)
+-                DOLPHIN_DEED(getRandomDeed());
++                DOLPHIN_DEED(DolphinDeedPluginGameStart);
+             if(state->diceSelect >= 20 && state->diceRoll == state->diceSelect - 1)
+-                DOLPHIN_DEED(getRandomDeed());
++                DOLPHIN_DEED(DolphinDeedPluginGameStart);
+             if(state->diceQty == 1) {
+                 snprintf(state->strings[1], sizeof(state->strings[1]), "%d", state->diceRoll);
+             } else if(state->diceQty == 2) {
+@@ -388,7 +385,7 @@ static void dice_render_callback(Canvas* const canvas, void* ctx) {
+             canvas_draw_str_aligned(canvas, 64, 26, AlignCenter, AlignCenter, state->strings[2]);
+             canvas_draw_str_aligned(canvas, 64, 34, AlignCenter, AlignCenter, state->strings[3]);
+         } else if(state->diceSelect == 228 || state->diceSelect == 229) {
+-            canvas_set_font(canvas, FontBatteryPercent);
++            canvas_set_font(canvas, FontSecondary);
+             canvas_draw_str_aligned(canvas, 64, 20, AlignCenter, AlignCenter, state->strings[1]);
+             canvas_set_font(canvas, FontSecondary);
+             canvas_draw_str_aligned(canvas, 64, 8, AlignCenter, AlignCenter, state->strings[0]);
+@@ -543,11 +540,7 @@ int32_t dice_app(void* p) {
+                         } else if(plugin_state->diceSelect == 20) {
+                             plugin_state->diceSelect = 100;
+                         } else if(plugin_state->diceSelect == 100) {
+-                            if(plugin_state->desktop_settings->is_dumbmode) {
+-                                plugin_state->diceSelect = 231;
+-                            } else {
+-                                plugin_state->diceSelect = 230;
+-                            }
++                            plugin_state->diceSelect = 230;
+                         } else if(plugin_state->diceSelect == 230) {
+                             plugin_state->playerOneScore = 0;
+                             plugin_state->playerTwoScore = 0;
+@@ -557,11 +550,7 @@ int32_t dice_app(void* p) {
+                         } else if(plugin_state->diceSelect == 229) {
+                             plugin_state->diceSelect = 228;
+                         } else if(plugin_state->diceSelect == 228) {
+-                            if(plugin_state->desktop_settings->is_dumbmode) {
+-                                plugin_state->diceSelect = 59;
+-                            } else {
+-                                plugin_state->diceSelect = 232;
+-                            }
++                            plugin_state->diceSelect = 232;
+                         } else if(plugin_state->diceSelect == 232) {
+                             plugin_state->diceSelect = 233;
+                         } else if(plugin_state->diceSelect == 233) {
+diff --git a/applications/plugins/dice/images/black.png b/applications/plugins/dice/images/black.png
+deleted file mode 100644
+index 758aa5860baff233c52e08925c060251e8d598c0..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 152
+zcmeAS@N?(olHy`uVBq!ia0vp^4M6O`!3-pya`gKGDaPU;cPEB*=VV?2IV|apzK#qG
+z8~eHcB(ehe%mF?ju0VQumF+Dc#aZAHS<Jw|cNl~jkLRyQ0Sd}_x;TbpIKMr}$Oz;$
+jDg0lb=ivZkfxv;CQVI?Xj0v8NZXm9wtDnm{r-UW|!;2$A
+
+-- 
+2.39.2
+
