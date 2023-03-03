@@ -1,6 +1,6 @@
 # DEPRECATED
 
-Use [Build-server-v2](../build-server-v2/readme.md)
+Use [Build-server-v2](../build-server-v2/)
 
 # flipkg: Flipper Package Manager 
 ## Build Server

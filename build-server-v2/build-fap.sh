@@ -10,18 +10,20 @@ SOURCEDIR="/"
 function usage() {
   EXITCODE=${1:-0}
   cat <<-EOF
-Usage: ./build-fap.sh [options] repo_url fap_name owner/id tag_name
+Usage: ./build-fap.sh [options] repo_url [owner/id tag_name]
   
 Options:
+  repo_url              URL of the app repository
+  owner/id              (Reserved) Upload info for the flipkg service.
+  tag_name              (Reserved) Upload info for the flipkg service.
   -h                    shows usage
   -b branch             branch (or tag) of the app repo to build
   -B firmware_branch    branch (or tag) of the Flipper zero firmware to build for.
                         If there's already a firmware version installed, this argument
                         is ignored.
-  -n appid              Generate an specific appid. If not specified, it will attempt 
-                        to guess it from the manifest
   -d source_dir         Directory within the app repo where the App code resides.
   -r                    clone submodules from app repo
+  -n appid              override app id detection and use the specified app id instead
   -p                    preserve artifacts (don't cleanup)
   -P patch_in_b64_gz    Apply a patch encoded in base64 and gzipped
   -l                    local build (don't upload the results). Involves -p
