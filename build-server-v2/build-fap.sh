@@ -18,6 +18,8 @@ Options:
   -B firmware_branch    branch (or tag) of the Flipper zero firmware to build for.
                         If there's already a firmware version installed, this argument
                         is ignored.
+  -n appid              Generate an specific appid. If not specified, it will attempt 
+                        to guess it from the manifest
   -d source_dir         Directory within the app repo where the App code resides.
   -r                    clone submodules from app repo
   -p                    preserve artifacts (don't cleanup)
@@ -28,7 +30,7 @@ EOF
   exit $((EXITCODE))
 }
 
-optstring=":hb:B:d:P:plr"
+optstring=":hb:B:d:P:n:plr"
 
 while getopts ${optstring} arg; do
   case ${arg} in
@@ -57,6 +59,9 @@ while getopts ${optstring} arg; do
     r)
       RECURSIVE="--recursive"
       ;;
+    n)
+      FAPNAME="${OPTARG}"
+      ;;
     :)
       echo "$0: must supply an argument to -$OPTARG." >&2
       exit 1
@@ -71,31 +76,25 @@ done
 shift $((OPTIND -1))
 
 SOURCEREPO=$1
-FAPNAME=$2
 
 if [ -z $1 ]; then
   echo "Must provide the app source repo!"
   usage 64
 fi
 
-if [ -z $2 ]; then
-  echo "Must provide the app name to build!"
-  usage 64
-fi
-
 if [ "$LOCAL" != true ]; then
-  if [[ ( -z $3 ) ]]; then
+  if [[ ( -z $2 ) ]]; then
     echo "Must provide owner/id for this build! Are you trying to do a (-l)ocal build instead?"
     usage 64
   else
-    OWNERID=$3
+    OWNERID=$2
   fi
 
-  if [[ ( -z $4 )]]; then
+  if [[ ( -z $3 )]]; then
     echo "Must provide a tag name for this build! Are you trying to do a (-l)ocal build instead?"
     usage 64
   else
-    BUILD_TAG=$4
+    BUILD_TAG=$3
   fi
 
   if [[(-z $AZURE_STORAGE_CONTAINER)]]; then
@@ -113,7 +112,11 @@ echo "Source repo ${SOURCEREPO}"
 
 # Find the specific firmware version or download it.
 function getFlipperRepo {
-  if [ ! -d ./flipper ]; then
+  if [ -d ./flipper-base ]; then
+    echo "Detected a flipper-base directory, copying into ${WORK_DIR}/flipper..."
+    cp -r flipper-base flipper
+  fi
+  if [ ! -d ./flipper/.git ]; then
     echo "clonning ${FZBRANCH} from flipperzero-firmware repo"
     git clone https://github.com/flipperdevices/flipperzero-firmware.git -b $FZBRANCH --single-branch flipper
   else
@@ -144,10 +147,21 @@ function getAppRepo {
 function moveAppRepo {
   OLDTEMPAPPDIR=$TEMPAPPDIR
   TEMPAPPDIR="${TEMPAPPDIR}${SOURCEDIR}"
-  mv $TEMPAPPDIR ./flipper/applications_user/
+  TEMPAPPDIR="${TEMPAPPDIR%/}"
+  echo "Moving ${TEMPAPPDIR} into ${WORK_DIR}/flipper/applications_user..."
+  mv $TEMPAPPDIR ./flipper/applications_user
   TEMPAPPDIR=${TEMPAPPDIR##*/}
   TEMPAPPDIR="${PWD}/flipper/applications_user/${TEMPAPPDIR}"
   echo "Moved app directory to ${TEMPAPPDIR}."
+  D_FAP_NAME=$(cat ${TEMPAPPDIR}/application.fam | grep appid | sed -e "s/[ \t]*appid=\"//" | sed -e "s/\",//")
+  FAP_CATEGORY=$(cat ${TEMPAPPDIR}/application.fam | grep fap_category | sed -e "s/[ \t]*fap_category=\"//" | sed -e "s/\",//")
+  echo "Detected FAP name ${D_FAP_NAME}"
+  echo "FAP category ${FAP_CATEGORY}"
+
+  if [ -z $FAPNAME ]; then
+    FAPNAME=$D_FAP_NAME
+    echo "FAPNAME $FAPNAME"
+  fi
 }
 
 # Build the .fap
@@ -158,6 +172,10 @@ function buildFap {
   ./fbt fap_${FAPNAME} 2>&1 | tee $LOGFILE
   FAPFILE=$(cat $LOGFILE | grep APPCHK | sed -e "s/^[ \t]*APPCHK[ \t]*//")
   echo "Fap generated as ${FAPFILE}."
+
+  # Copy fap file to output
+  mkdir -p $WORK_DIR/out/$FAP_CATEGORY
+  cp $FAPFILE $WORK_DIR/out/$FAP_CATEGORY
 }
 
 # Export the result

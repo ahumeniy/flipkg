@@ -1,3 +1,7 @@
+# DEPRECATED
+
+Use [Build-server-v2](../build-server-v2/readme.md)
+
 # flipkg: Flipper Package Manager 
 ## Build Server
 Here's is the source code for the build server. It implements an Azure Function which can build a `.fap` file from a source repo.
