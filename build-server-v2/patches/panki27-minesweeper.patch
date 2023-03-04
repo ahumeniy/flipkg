@@ -1,0 +1,48 @@
+From 43811e214f4312c643b5d707805bab9dbd23e105 Mon Sep 17 00:00:00 2001
+From: Alexei Humeniy <yo@ahumeniy.net>
+Date: Fri, 3 Mar 2023 23:36:47 -0300
+Subject: [PATCH] Squashed commit of the following:
+
+commit 34b645c51e9fbe1e673f6b1334b100895dddb312
+Merge: bb6e54c 94924fa
+Author: Felix Pankratz <panki312@gmail.com>
+Date:   Fri Dec 23 14:05:24 2022 +0100
+
+    Merge pull request #7 from gelin/fix-v0.72.1
+
+    fix build for firmware v0.72.1
+
+commit 94924fa550ddb7bc8d5d66dd5cabe3a307af2f25
+Author: Denis Nelubin <dnelubin@gmail.com>
+Date:   Fri Dec 9 15:16:03 2022 +0600
+
+    fix build for firmware v0.72.1
+---
+ minesweeper.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/minesweeper.c b/minesweeper.c
+index 981a398..ae735d5 100644
+--- a/minesweeper.c
++++ b/minesweeper.c
+@@ -462,6 +462,8 @@ int32_t minesweeper_app(void* p) {
+               // Exit the plugin
+               processing = false;
+               break;
++            case InputKeyMAX:
++              break;
+           }
+         } else if (event.input.type == InputTypeLong) {
+           // hold events
+@@ -479,6 +481,8 @@ int32_t minesweeper_app(void* p) {
+             case InputKeyBack:
+               processing = false;
+               break;
++            case InputKeyMAX:
++              break;
+           }
+         }
+       }
+-- 
+2.39.2
+

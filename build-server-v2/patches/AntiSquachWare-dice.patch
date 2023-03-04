@@ -1,0 +1,75 @@
+From a10e84348171b665fd4ac7c2ef85962db182ab4c Mon Sep 17 00:00:00 2001
+From: Alexei Humeniy <yo@ahumeniy.net>
+Date: Fri, 3 Mar 2023 23:11:19 -0300
+Subject: [PATCH] Dice patch for Official FW
+
+---
+ applications/plugins/dice/application.fam |  2 +-
+ applications/plugins/dice/dice.c          | 18 +++++-------------
+ 2 files changed, 6 insertions(+), 14 deletions(-)
+
+diff --git a/applications/plugins/dice/application.fam b/applications/plugins/dice/application.fam
+index 83cd0203..67970bbe 100644
+--- a/applications/plugins/dice/application.fam
++++ b/applications/plugins/dice/application.fam
+@@ -8,5 +8,5 @@ App(
+     stack_size=2 * 1024,
+     order=70,
+     fap_icon="dice.png",
+-    fap_category="Games",
++    fap_category="Games"
+ )
+diff --git a/applications/plugins/dice/dice.c b/applications/plugins/dice/dice.c
+index 84f510fa..ab5dcc62 100644
+--- a/applications/plugins/dice/dice.c
++++ b/applications/plugins/dice/dice.c
+@@ -293,9 +293,9 @@ static void dice_render_callback(Canvas* const canvas, void* ctx) {
+                 state->diceType[0],
+                 state->rollTime[0]);
+             if(state->diceSelect >= 20 && state->diceRoll == state->diceSelect)
+-                DOLPHIN_DEED(getRandomDeed());
++                DOLPHIN_DEED(DolphinDeedPluginGameStart);
+             if(state->diceSelect >= 20 && state->diceRoll == state->diceSelect - 1)
+-                DOLPHIN_DEED(getRandomDeed());
++                DOLPHIN_DEED(DolphinDeedPluginGameStart);
+             if(state->diceQty == 1) {
+                 snprintf(state->strings[1], sizeof(state->strings[1]), "%d", state->diceRoll);
+             } else if(state->diceQty == 2) {
+@@ -357,7 +357,7 @@ static void dice_render_callback(Canvas* const canvas, void* ctx) {
+             canvas_draw_str_aligned(canvas, 64, 34, AlignCenter, AlignCenter, state->strings[3]);
+             canvas_draw_str_aligned(canvas, 64, 42, AlignCenter, AlignCenter, state->strings[4]);
+         } else if(state->diceSelect == 228 || state->diceSelect == 229) {
+-            canvas_set_font(canvas, FontBatteryPercent);
++            canvas_set_font(canvas, FontSecondary);
+             canvas_draw_str_aligned(canvas, 64, 20, AlignCenter, AlignCenter, state->strings[1]);
+             canvas_set_font(canvas, FontSecondary);
+             canvas_draw_str_aligned(canvas, 64, 8, AlignCenter, AlignCenter, state->strings[0]);
+@@ -510,11 +510,7 @@ int32_t dice_app(void* p) {
+                         } else if(plugin_state->diceSelect == 20) {
+                             plugin_state->diceSelect = 100;
+                         } else if(plugin_state->diceSelect == 100) {
+-                            if(plugin_state->desktop_settings->is_dumbmode) {
+-                                plugin_state->diceSelect = 231;
+-                            } else {
+-                                plugin_state->diceSelect = 230;
+-                            }
++                            plugin_state->diceSelect = 230;
+                         } else if(plugin_state->diceSelect == 230) {
+                             plugin_state->playerOneScore = 0;
+                             plugin_state->playerTwoScore = 0;
+@@ -524,11 +520,7 @@ int32_t dice_app(void* p) {
+                         } else if(plugin_state->diceSelect == 229) {
+                             plugin_state->diceSelect = 228;
+                         } else if(plugin_state->diceSelect == 228) {
+-                            if(plugin_state->desktop_settings->is_dumbmode) {
+-                                plugin_state->diceSelect = 59;
+-                            } else {
+-                                plugin_state->diceSelect = 232;
+-                            }
++                            plugin_state->diceSelect = 232;
+                         } else if(plugin_state->diceSelect == 232) {
+                             plugin_state->diceSelect = 59;
+                         } else if(plugin_state->diceSelect == 59) {
+-- 
+2.39.2
+

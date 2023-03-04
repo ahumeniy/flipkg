@@ -1,0 +1,365 @@
+From 86786285d11dfd3476b592d0ad029dec8a02e7a9 Mon Sep 17 00:00:00 2001
+From: Alexei Humeniy <yo@ahumeniy.net>
+Date: Sat, 4 Mar 2023 01:48:04 -0300
+Subject: [PATCH] Patched for OFW
+
+---
+ application.fam              |   9 +++--
+ hal.c                        |  72 +++++++++++++++++------------------
+ tama.h                       |   2 +-
+ tamaIcon.png                 | Bin 0 -> 1924 bytes
+ tamagotchi_p1.c => tama_p1.c |  32 ++++++++--------
+ 5 files changed, 58 insertions(+), 57 deletions(-)
+ create mode 100644 tamaIcon.png
+ rename tamagotchi_p1.c => tama_p1.c (90%)
+
+diff --git a/application.fam b/application.fam
+index 67393db..848a41f 100644
+--- a/application.fam
++++ b/application.fam
+@@ -1,13 +1,14 @@
+ App(
+-    appid="tamagotchi_p1",
+-    name="Tamagotchi",
++    appid="TAMA_P1",
++    name="TAMA P1",
+     apptype=FlipperAppType.EXTERNAL,
+-    entry_point="tamagotchi_p1_app",
+-    cdefines=["APP_TAMAGOTCHI_P1"],
++    entry_point="tama_p1_app",
++    cdefines=["APP_TAMA_P1"],
+     requires=["gui", "storage"],
+     stack_size=1 * 1024,
+     icon="A_Plugins_14",
+     fap_version=(0,1),
++    fap_icon="tamaIcon.png",
+     fap_category="Games",
+     fap_description="Tamagotchi P1 emulator",
+     fap_author="cyanic",
+diff --git a/hal.c b/hal.c
+index facab90..03e0887 100644
+--- a/hal.c
++++ b/hal.c
+@@ -1,25 +1,24 @@
+ #include <furi.h>
+ #include <furi_hal.h>
+ #include <stdlib.h>
+-#include <m-string.h>
+ #include <stm32wbxx_ll_tim.h>
+ #include "tama.h"
+ 
+ #define TAG_HAL "TamaLIB"
+ 
+-static void* tamagotchi_p1_hal_malloc(u32_t size) {
++static void* tama_p1_hal_malloc(u32_t size) {
+     return malloc(size);
+ }
+ 
+-static void tamagotchi_p1_hal_free(void* ptr) {
++static void tama_p1_hal_free(void* ptr) {
+     free(ptr);
+ }
+ 
+-static void tamagotchi_p1_hal_halt(void) {
++static void tama_p1_hal_halt(void) {
+     g_ctx->halted = true;
+ }
+ 
+-static bool_t tamagotchi_p1_hal_is_log_enabled(log_level_t level) {
++static bool_t tama_p1_hal_is_log_enabled(log_level_t level) {
+     switch(level) {
+     case LOG_ERROR:
+         return true;
+@@ -34,33 +33,34 @@ static bool_t tamagotchi_p1_hal_is_log_enabled(log_level_t level) {
+     }
+ }
+ 
+-static void tamagotchi_p1_hal_log(log_level_t level, char* buff, ...) {
+-    if(!tamagotchi_p1_hal_is_log_enabled(level)) return;
++static void tama_p1_hal_log(log_level_t level, char* buff, ...) {
++    if(!tama_p1_hal_is_log_enabled(level)) return;
+ 
+-    string_t string;
++    FuriString* string;
++    string = furi_string_alloc();
+     va_list args;
+     va_start(args, buff);
+-    string_init_vprintf(string, buff, args);
++    furi_string_cat_vprintf(string, buff, args);
+     va_end(args);
+ 
+     switch(level) {
+     case LOG_ERROR:
+-        FURI_LOG_E(TAG_HAL, "%s", string_get_cstr(string));
++        FURI_LOG_E(TAG_HAL, "%s", furi_string_get_cstr(string));
+         break;
+     case LOG_INFO:
+-        FURI_LOG_I(TAG_HAL, "%s", string_get_cstr(string));
++        FURI_LOG_I(TAG_HAL, "%s", furi_string_get_cstr(string));
+         break;
+     case LOG_MEMORY:
+     case LOG_CPU:
+     default:
+-        FURI_LOG_D(TAG_HAL, "%s", string_get_cstr(string));
++        FURI_LOG_D(TAG_HAL, "%s", furi_string_get_cstr(string));
+         break;
+     }
+ 
+-    string_clear(string);
++    furi_string_free(string);
+ }
+ 
+-static void tamagotchi_p1_hal_sleep_until(timestamp_t ts) {
++static void tama_p1_hal_sleep_until(timestamp_t ts) {
+     while(true) {
+         uint32_t count = LL_TIM_GetCounter(TIM2);
+         uint32_t delay = ts - count;
+@@ -80,29 +80,29 @@ static void tamagotchi_p1_hal_sleep_until(timestamp_t ts) {
+     }
+ }
+ 
+-static timestamp_t tamagotchi_p1_hal_get_timestamp(void) {
++static timestamp_t tama_p1_hal_get_timestamp(void) {
+     return LL_TIM_GetCounter(TIM2);
+ }
+ 
+-static void tamagotchi_p1_hal_update_screen(void) {
++static void tama_p1_hal_update_screen(void) {
+     // Do nothing, covered by main loop
+ }
+ 
+-static void tamagotchi_p1_hal_set_lcd_matrix(u8_t x, u8_t y, bool_t val) {
++static void tama_p1_hal_set_lcd_matrix(u8_t x, u8_t y, bool_t val) {
+     if(val)
+         g_ctx->framebuffer[y] |= 1 << x;
+     else
+         g_ctx->framebuffer[y] &= ~(1 << x);
+ }
+ 
+-static void tamagotchi_p1_hal_set_lcd_icon(u8_t icon, bool_t val) {
++static void tama_p1_hal_set_lcd_icon(u8_t icon, bool_t val) {
+     if(val)
+         g_ctx->icons |= 1 << icon;
+     else
+         g_ctx->icons &= ~(1 << icon);
+ }
+ 
+-static void tamagotchi_p1_hal_play_frequency(bool_t en) {
++static void tama_p1_hal_play_frequency(bool_t en) {
+     if(en)
+         furi_hal_speaker_start(g_ctx->frequency, 0.5f);
+     else
+@@ -111,28 +111,28 @@ static void tamagotchi_p1_hal_play_frequency(bool_t en) {
+     g_ctx->buzzer_on = en;
+ }
+ 
+-static void tamagotchi_p1_hal_set_frequency(u32_t freq) {
++static void tama_p1_hal_set_frequency(u32_t freq) {
+     g_ctx->frequency = freq / 10.0F;
+-    if(g_ctx->buzzer_on) tamagotchi_p1_hal_play_frequency(true);
++    if(g_ctx->buzzer_on) tama_p1_hal_play_frequency(true);
+ }
+ 
+-static int tamagotchi_p1_hal_handler(void) {
++static int tama_p1_hal_handler(void) {
+     // Do nothing
+     return 0;
+ }
+ 
+-void tamagotchi_p1_hal_init(hal_t* hal) {
+-    hal->malloc = tamagotchi_p1_hal_malloc;
+-    hal->free = tamagotchi_p1_hal_free;
+-    hal->halt = tamagotchi_p1_hal_halt;
+-    hal->is_log_enabled = tamagotchi_p1_hal_is_log_enabled;
+-    hal->log = tamagotchi_p1_hal_log;
+-    hal->sleep_until = tamagotchi_p1_hal_sleep_until;
+-    hal->get_timestamp = tamagotchi_p1_hal_get_timestamp;
+-    hal->update_screen = tamagotchi_p1_hal_update_screen;
+-    hal->set_lcd_matrix = tamagotchi_p1_hal_set_lcd_matrix;
+-    hal->set_lcd_icon = tamagotchi_p1_hal_set_lcd_icon;
+-    hal->set_frequency = tamagotchi_p1_hal_set_frequency;
+-    hal->play_frequency = tamagotchi_p1_hal_play_frequency;
+-    hal->handler = tamagotchi_p1_hal_handler;
++void tama_p1_hal_init(hal_t* hal) {
++    hal->malloc = tama_p1_hal_malloc;
++    hal->free = tama_p1_hal_free;
++    hal->halt = tama_p1_hal_halt;
++    hal->is_log_enabled = tama_p1_hal_is_log_enabled;
++    hal->log = tama_p1_hal_log;
++    hal->sleep_until = tama_p1_hal_sleep_until;
++    hal->get_timestamp = tama_p1_hal_get_timestamp;
++    hal->update_screen = tama_p1_hal_update_screen;
++    hal->set_lcd_matrix = tama_p1_hal_set_lcd_matrix;
++    hal->set_lcd_icon = tama_p1_hal_set_lcd_icon;
++    hal->set_frequency = tama_p1_hal_set_frequency;
++    hal->play_frequency = tama_p1_hal_play_frequency;
++    hal->handler = tama_p1_hal_handler;
+ }
+diff --git a/tama.h b/tama.h
+index 8fa5421..d8ae00e 100644
+--- a/tama.h
++++ b/tama.h
+@@ -35,4 +35,4 @@ typedef struct {
+ extern TamaApp* g_ctx;
+ extern FuriMutex* g_state_mutex;
+ 
+-void tamagotchi_p1_hal_init(hal_t* hal);
++void tama_p1_hal_init(hal_t* hal);
+diff --git a/tamaIcon.png b/tamaIcon.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..1962b68aecb344c3cf50c1826d8bd72fa221e411
+GIT binary patch
+literal 1924
+zcmcIlPjBNy6!*5Jbc-q>!~p>ZulE9MCmv5?JGPQ7Y13{Z)un2KTEwN}nQ>w@@fh1}
+z(n@eZT#%6VgCMQM6%I(tfg2q76i7&XftAX0oMeMky18J<o|)%2zxVI=X1+Z<c(Sqn
+z?z*BV8|_x}2*!NAzP1eCAOG5V3d6nh=*hP7?6>#-gvCm?;WZTHho^76ps&Gt^>Dwl
+zdvkLG(@&rO@f8gB<JM=XqLd!w@4eSQe*ynie-AsS*{QehGC3$wE`3oN4Pww%l-kxP
+zrtDl~sxP`>RM-Cg>1Rz1d0jg(J?zChq8GNV6LEZf&|%l-%;DPB<Bj#&$OVLf$f!CR
+z^rO@r)wMCO3-es8YwB1fJFjbv+@gBw9jZGr5vpAxh+&LX+bJ2oWm4POR0$?T$ChrC
+zkzu<P%QY(M<k7&Ms@4)7xJS*si9J}=wO*FRuC5P<!_u%^l1W!L9LLcy(FsAIfzqoe
+zqazfh4-1e9OjD#R3F9o3k($F&UtVN&4O}i_8N@T}D4iq>Qm2n-tQ#eq$2L{;yt`Eg
+zgPC@k?OuYFiPN_Nr=6=<=tm-z7YP%)mm<m@PL0JqnaQ*#|HHT0?|*s7+00;kk@Uwo
+z;!GEPF#zlobd9lpvAdH9n#rUiWq(?+!>L7;luM@i!ATf#IZQvyJ(_F~O`3_imRAp9
+z2N`C^uv~1qW%3A@U5pD=4+z0&Mi*0-JPfWDQT05x9i<tKm}oca8aP!7L+)a~Vv<Ug
+zqN?dvP}Qk$<e0dOXxRvC!{j!ru(4mTzbV;8o{4;a!Cx*JV9c`VS_bhApZKV1Spu0h
+zpjFMlM1(lLFbxXEtSQ<jNeDee`}3%|R~!%psoItyD8hziqd-(Ja{Ow5tN>RX%Qm>d
+ziKf1^yCeHD@g#@rmNk_#H;~DI0)N5*?Fv1Px>HI6slf;Y(+X3l;MKTYiryJF&9V4m
+zPBdwOeyEQ5=u(!qL0w~c{RP)1;_#NlE*3%oJM0Mny@MBpS}KEVNE6ZMLJ?lgJAHvb
+zQhIrJ7>n`a{|uwRW<45p1)Q|df%AdY^!!YkuUbvNy}-4XbeU4F0nL!JAf3z9m<8Lk
+zJ13g4;PI57l$N<e7)7>KEhC3iY*Y=fj~EXKC$_=tz$!fJhjT!MXdb+#zuK!}*W58Y
+zMl7Uo#={Cip58F|YIaMB2ojdS9rVlh@3r9m+H5x)op(;y+1bkSDpro)Tsl}X*0y_V
+sALGW`9lN>GdcME>(b9u&-rCz!?i1zFcVGUxnO}VE-Gk<{?X$1{0R&<;i~s-t
+
+literal 0
+HcmV?d00001
+
+diff --git a/tamagotchi_p1.c b/tama_p1.c
+similarity index 90%
+rename from tamagotchi_p1.c
+rename to tama_p1.c
+index a6d79ff..78d946f 100644
+--- a/tamagotchi_p1.c
++++ b/tama_p1.c
+@@ -6,7 +6,7 @@
+ #include <stm32wbxx_ll_tim.h>
+ #include <tamalib.h>
+ #include "tama.h"
+-#include "tamagotchi_p1_icons.h"
++#include "TAMA_P1_icons.h"
+ 
+ TamaApp* g_ctx;
+ FuriMutex* g_state_mutex;
+@@ -22,7 +22,7 @@ static const Icon* icons_list[] = {
+     &I_icon_7,
+ };
+ 
+-static void tamagotchi_p1_draw_callback(Canvas* const canvas, void* cb_ctx) {
++static void tama_p1_draw_callback(Canvas* const canvas, void* cb_ctx) {
+     furi_assert(cb_ctx);
+ 
+     FuriMutex* const mutex = cb_ctx;
+@@ -104,21 +104,21 @@ static void tamagotchi_p1_draw_callback(Canvas* const canvas, void* cb_ctx) {
+     furi_mutex_release(mutex);
+ }
+ 
+-static void tamagotchi_p1_input_callback(InputEvent* input_event, FuriMessageQueue* event_queue) {
++static void tama_p1_input_callback(InputEvent* input_event, FuriMessageQueue* event_queue) {
+     furi_assert(event_queue);
+ 
+     TamaEvent event = {.type = EventTypeInput, .input = *input_event};
+     furi_message_queue_put(event_queue, &event, FuriWaitForever);
+ }
+ 
+-static void tamagotchi_p1_update_timer_callback(FuriMessageQueue* event_queue) {
++static void tama_p1_update_timer_callback(FuriMessageQueue* event_queue) {
+     furi_assert(event_queue);
+ 
+     TamaEvent event = {.type = EventTypeTick};
+     furi_message_queue_put(event_queue, &event, 0);
+ }
+ 
+-static int32_t tamagotchi_p1_worker(void* context) {
++static int32_t tama_p1_worker(void* context) {
+     bool running = true;
+     FuriMutex* mutex = context;
+     while(furi_mutex_acquire(mutex, FuriWaitForever) != FuriStatusOk) furi_delay_tick(1);
+@@ -139,10 +139,10 @@ static int32_t tamagotchi_p1_worker(void* context) {
+     return 0;
+ }
+ 
+-static void tamagotchi_p1_init(TamaApp* const ctx) {
++static void tama_p1_init(TamaApp* const ctx) {
+     g_ctx = ctx;
+     memset(ctx, 0, sizeof(TamaApp));
+-    tamagotchi_p1_hal_init(&ctx->hal);
++    tama_p1_hal_init(&ctx->hal);
+ 
+     // Load ROM
+     Storage* storage = furi_record_open(RECORD_STORAGE);
+@@ -199,13 +199,13 @@ static void tamagotchi_p1_init(TamaApp* const ctx) {
+         ctx->thread = furi_thread_alloc();
+         furi_thread_set_name(ctx->thread, "TamaLIB");
+         furi_thread_set_stack_size(ctx->thread, 1024);
+-        furi_thread_set_callback(ctx->thread, tamagotchi_p1_worker);
++        furi_thread_set_callback(ctx->thread, tama_p1_worker);
+         furi_thread_set_context(ctx->thread, g_state_mutex);
+         furi_thread_start(ctx->thread);
+     }
+ }
+ 
+-static void tamagotchi_p1_deinit(TamaApp* const ctx) {
++static void tama_p1_deinit(TamaApp* const ctx) {
+     if(ctx->rom != NULL) {
+         tamalib_release();
+         furi_thread_free(ctx->thread);
+@@ -213,24 +213,24 @@ static void tamagotchi_p1_deinit(TamaApp* const ctx) {
+     }
+ }
+ 
+-int32_t tamagotchi_p1_app(void* p) {
++int32_t tama_p1_app(void* p) {
+     UNUSED(p);
+ 
+     TamaApp* ctx = malloc(sizeof(TamaApp));
+     g_state_mutex = furi_mutex_alloc(FuriMutexTypeRecursive);
+-    tamagotchi_p1_init(ctx);
++    tama_p1_init(ctx);
+ 
+     FuriMessageQueue* event_queue = furi_message_queue_alloc(8, sizeof(TamaEvent));
+ 
+     ViewPort* view_port = view_port_alloc();
+-    view_port_draw_callback_set(view_port, tamagotchi_p1_draw_callback, g_state_mutex);
+-    view_port_input_callback_set(view_port, tamagotchi_p1_input_callback, event_queue);
++    view_port_draw_callback_set(view_port, tama_p1_draw_callback, g_state_mutex);
++    view_port_input_callback_set(view_port, tama_p1_input_callback, event_queue);
+ 
+     Gui* gui = furi_record_open(RECORD_GUI);
+     gui_add_view_port(gui, view_port, GuiLayerFullscreen);
+ 
+     FuriTimer* timer =
+-        furi_timer_alloc(tamagotchi_p1_update_timer_callback, FuriTimerTypePeriodic, event_queue);
++        furi_timer_alloc(tama_p1_update_timer_callback, FuriTimerTypePeriodic, event_queue);
+     furi_timer_start(timer, furi_kernel_get_tick_frequency() / 30);
+ 
+     for(bool running = true; running;) {
+@@ -246,7 +246,7 @@ int32_t tamagotchi_p1_app(void* p) {
+             } else if(event.type == EventTypeInput) {
+                 FURI_LOG_D(
+                     TAG,
+-                    "EventTypeInput: %lu %d %d",
++                    "EventTypeInput: %ld %d %d",
+                     event.input.sequence,
+                     event.input.key,
+                     event.input.type);
+@@ -292,7 +292,7 @@ int32_t tamagotchi_p1_app(void* p) {
+     view_port_free(view_port);
+     furi_message_queue_free(event_queue);
+     furi_mutex_free(g_state_mutex);
+-    tamagotchi_p1_deinit(ctx);
++    tama_p1_deinit(ctx);
+     free(ctx);
+ 
+     return 0;
+-- 
+2.39.2
+

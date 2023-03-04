@@ -155,8 +155,8 @@ function moveAppRepo {
   TEMPAPPDIR=${TEMPAPPDIR##*/}
   TEMPAPPDIR="${PWD}/flipper/applications_user/${TEMPAPPDIR}"
   echo "Moved app directory to ${TEMPAPPDIR}."
-  D_FAP_NAME=$(cat ${TEMPAPPDIR}/application.fam | grep appid | sed -e "s/[ \t]*appid=\"//" | sed -e "s/\",//")
-  FAP_CATEGORY=$(cat ${TEMPAPPDIR}/application.fam | grep fap_category | sed -e "s/[ \t]*fap_category=\"//" | sed -e "s/\",//")
+  D_FAP_NAME=$(cat ${TEMPAPPDIR}/application.fam | grep appid | sed -e "s/[ \t]*appid=\"//" | sed -e "s/\",*//")
+  FAP_CATEGORY=$(cat ${TEMPAPPDIR}/application.fam | grep fap_category | sed -e "s/[ \t]*fap_category=\"//" | sed -e "s/\",*//")
   echo "Detected FAP name ${D_FAP_NAME}"
   echo "FAP category ${FAP_CATEGORY}"
 
